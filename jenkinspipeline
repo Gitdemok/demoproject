@@ -2,6 +2,7 @@ pipeline {
     agent any
 
     stages {
+        /*
         stage('build') {
             agent{
             docker{
@@ -21,21 +22,30 @@ pipeline {
                 '''
             }
         }
-        stage('test'){
-             agent{
-            docker{
-                image 'node:18-alpine'
-                   reuseNode true
-            }
-            }
-         steps{
-            sh'''
-            test -f build/index.html
-            npm test
-            '''
-         }
+        */
+        stage(tests) {
+            paralle{
+                stage('test'){
+                            agent{
+                                 docker{
+                                image 'node:18-alpine'
+                                reuseNode true
+                                          }
+                                    }
+                                            steps{
+                                                sh'''
+                                                test -f build/index.html
+                                                npm test
+                                                '''
+                                            }
+                                            post {
+                                                        always {
+                                                            junit 'jest-results/junit.xml'
+                                                        }
+                                                    }
+                            }
 
-        }
+        
          stage('E2E'){
              agent{
             docker{
@@ -46,16 +56,24 @@ pipeline {
          steps{
             sh'''
             npm install  serve
-            node_modules/.bin/serve -s build
-            npx playwright test
+            node_modules/.bin/serve -s build &
+                            sleep 10
+                            npx playwright test  --reporter=html
             '''
          }
+            post {
+                      always {
+                                publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Playwright HTML Report', reportTitles: '', useWrapperFileDirectly: true])
+                            }
+                }
 
         }
-    }
-    post{
-        always{
-        junit 'jest-results/junit.xml'
-    }
-    }
-}
+          }
+      }
+
+      }
+      }
+      
+        
+       
+   
