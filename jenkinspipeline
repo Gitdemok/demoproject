@@ -24,7 +24,7 @@ pipeline {
         }
         */
         stage('tests') {
-            paralle{
+            parallel{
                         stage('test'){
                                     agent{
                                         docker{
